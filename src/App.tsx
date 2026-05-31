@@ -618,7 +618,24 @@ function Page2({ data, onBack, onConfirm }) {
 
   return (
     <div style={{ background:"#eae4dc", minHeight:"100vh", fontFamily:"Georgia,serif" }}>
-      <style>{".pcard{transition:box-shadow 0.12s} .pcard:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08)} input:focus{outline:none} select{cursor:pointer}"}</style>
+      <style>{`
+        .pcard{transition:transform 0.18s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.18s ease, border-color 0.18s ease}
+        .pcard:hover{transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,0.08)}
+        .pcard:active{transform:translateY(0); transition-duration:80ms}
+        .pcard .pcard-arrow{transition:transform 0.2s ease, opacity 0.2s ease}
+        .pcard:hover .pcard-arrow{transform:translateX(3px)}
+        .savings-pill{transition:transform 0.2s ease}
+        .pcard:hover .savings-pill{transform:scale(1.03)}
+        .cta-btn{transition:transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease}
+        .cta-btn:hover{box-shadow:0 4px 14px rgba(0,0,0,0.12)}
+        .cta-btn:active{transform:scale(0.985)}
+        .calc-link{transition:color 0.15s ease}
+        .calc-link:hover{color:#2a2a2a!important}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .anim-in{animation:fadeUp 0.32s cubic-bezier(0.2,0.8,0.2,1) both}
+        input:focus{outline:none}
+        select{cursor:pointer}
+      `}</style>
 
       {calcPlan && <CalcPopup plan={calcPlan} planTitle={getPlanTitle(calcPlan.id)} cur={cur} onClose={function() { setCalcPlan(null); }} />}
 
@@ -688,7 +705,7 @@ function Page2({ data, onBack, onConfirm }) {
                 {pmMode && <span style={{ marginLeft:"auto" }}><PMBadge id="no_action" active={openNote==="no_action"} onToggle={toggleNote} /></span>}
               </div>
               <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", gap:14 }}>
-                <span style={{ fontSize:24, fontWeight:700, color:"#dc2626", letterSpacing:"-0.02em", fontFamily:"system-ui,sans-serif" }}>{fmt(noAction, cur)}</span>
+                <span style={{ fontSize:19, fontWeight:600, color:"#dc2626", letterSpacing:"-0.01em", fontFamily:"system-ui,sans-serif" }}>{fmt(noAction, cur)}</span>
                 <span style={{ fontSize:12, color:"#f87171", fontFamily:"system-ui,sans-serif", lineHeight:1.4 }}>balance + accruing interest + legal fees</span>
               </div>
             </div>
@@ -746,7 +763,7 @@ function Page2({ data, onBack, onConfirm }) {
                           <span style={{ fontSize:12, fontWeight:600, color: dark ? "#d1d5db" : "#333", fontFamily:"system-ui,sans-serif" }}>Selected</span>
                         </span>
                       ) : (
-                        <span style={{ color:txtMut, fontSize:15 }}>→</span>
+                        <span className="pcard-arrow" style={{ color:txtMut, fontSize:15, display:"inline-block" }}>→</span>
                       )}
                     </div>
                   </div>
@@ -758,13 +775,13 @@ function Page2({ data, onBack, onConfirm }) {
                     <div style={{ display:"flex", alignItems:"flex-end", gap:16, marginBottom:14 }}>
                       <div>
                         <div style={{ fontSize:10, letterSpacing:"0.1em", textTransform:"uppercase", color:txtMut, fontFamily:"system-ui,sans-serif", marginBottom:4 }}>One-time payment</div>
-                        <div style={{ fontSize:32, fontWeight:700, color:txtPri, letterSpacing:"-0.02em", lineHeight:1 }}>{fmt(plan.total, cur)}</div>
+                        <div style={{ fontSize:26, fontWeight:600, color:txtPri, letterSpacing:"-0.02em", lineHeight:1.05, fontFamily:"Georgia,serif" }}>{fmt(plan.total, cur)}</div>
                       </div>
                       {plan.saveVsNA > 0 && (
                         <div style={{ paddingBottom:4 }}>
-                          <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:savBg, borderRadius:20, padding:"5px 12px" }}>
-                            <span style={{ fontSize:13, fontWeight:600, color:savClr }}>Save {fmt(plan.saveVsNA, cur)}</span>
-                            <span style={{ fontSize:11, color:savClr, opacity:0.75 }}>vs. no action ({plan.savePct}%)</span>
+                          <div className="savings-pill" style={{ display:"inline-flex", alignItems:"center", gap:5, background:savBg, borderRadius:20, padding:"4px 10px" }}>
+                            <span style={{ fontSize:11, fontWeight:500, color:savClr, letterSpacing:"0.01em", fontFamily:"system-ui,sans-serif" }}>Save {fmt(plan.saveVsNA, cur)}</span>
+                            <span style={{ fontSize:11, fontWeight:400, color:savClr, opacity:0.7, fontFamily:"system-ui,sans-serif" }}>· {plan.savePct}%</span>
                           </div>
                         </div>
                       )}
@@ -774,25 +791,26 @@ function Page2({ data, onBack, onConfirm }) {
                       <div style={{ display:"flex", alignItems:"flex-end", gap:16, marginBottom:8 }}>
                         <div>
                           <div style={{ fontSize:10, letterSpacing:"0.1em", textTransform:"uppercase", color:txtMut, fontFamily:"system-ui,sans-serif", marginBottom:4 }}>Total to repay</div>
-                          <div style={{ fontSize:32, fontWeight:700, color:txtPri, letterSpacing:"-0.02em", lineHeight:1 }}>{fmt(plan.total, cur)}</div>
+                          <div style={{ fontSize:26, fontWeight:600, color:txtPri, letterSpacing:"-0.02em", lineHeight:1.05, fontFamily:"Georgia,serif" }}>{fmt(plan.total, cur)}</div>
                         </div>
                         {plan.saveVsNA > 0 && (
                           <div style={{ paddingBottom:4 }}>
-                            <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:savBg, borderRadius:20, padding:"5px 12px" }}>
-                              <span style={{ fontSize:13, fontWeight:600, color:savClr }}>Save {fmt(plan.saveVsNA, cur)}</span>
-                              <span style={{ fontSize:11, color:savClr, opacity:0.75 }}>vs. no action ({plan.savePct}%)</span>
+                            <div className="savings-pill" style={{ display:"inline-flex", alignItems:"center", gap:5, background:savBg, borderRadius:20, padding:"4px 10px" }}>
+                              <span style={{ fontSize:11, fontWeight:500, color:savClr, letterSpacing:"0.01em", fontFamily:"system-ui,sans-serif" }}>Save {fmt(plan.saveVsNA, cur)}</span>
+                              <span style={{ fontSize:11, fontWeight:400, color:savClr, opacity:0.7, fontFamily:"system-ui,sans-serif" }}>· {plan.savePct}%</span>
                             </div>
                           </div>
                         )}
                       </div>
                       <div style={{ display:"inline-flex", alignItems:"center", gap:4, background: dark ? "#2d2d2d" : "#f7f4f0", borderRadius:8, padding:"5px 12px" }}>
                         <span style={{ fontSize:12, color:txtMut, fontFamily:"system-ui,sans-serif" }}>Monthly</span>
-                        <span style={{ fontSize:15, fontWeight:700, color:txtPri, fontFamily:"system-ui,sans-serif", letterSpacing:"-0.01em" }}>{fmt(plan.monthly, cur)}</span>
+                        <span style={{ fontSize:14, fontWeight:600, color:txtPri, fontFamily:"system-ui,sans-serif", letterSpacing:"-0.01em" }}>{fmt(plan.monthly, cur)}</span>
                       </div>
                     </div>
                   )}
 
                   <button
+                    className="calc-link"
                     onClick={function(e) { e.stopPropagation(); setCalcPlan(plan); }}
                     style={{ background:"none", border:"none", fontSize:12, color: dark ? "#6b7280" : "#bbb", fontFamily:"system-ui,sans-serif", cursor:"pointer", padding:0, textDecoration:"underline", display:"block", marginBottom: isRec ? 12 : 0 }}
                   >
@@ -851,8 +869,9 @@ function Page2({ data, onBack, onConfirm }) {
 
       <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"linear-gradient(to top, #eae4dc 65%, transparent)", padding:"20px 24px 24px", display:"flex", justifyContent:"center", zIndex:100 }}>
         <button
+          className="cta-btn"
           onClick={function() { onConfirm({ plan:selectedPlan, currency:cur, isAdvisor:false }); }}
-          style={{ width:"100%", maxWidth:492, padding:"15px", background:"#2a2a2a", color:"#fff", border:"none", borderRadius:10, fontSize:15, fontWeight:500, cursor:"pointer", fontFamily:"system-ui,sans-serif" }}
+          style={{ width:"100%", maxWidth:492, padding:"15px", background:"#2a2a2a", color:"#fff", border:"none", borderRadius:10, fontSize:15, fontWeight:500, cursor:"pointer", fontFamily:"system-ui,sans-serif", boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}
         >
           Confirm — {getPlanTitle(selected)} →
         </button>
