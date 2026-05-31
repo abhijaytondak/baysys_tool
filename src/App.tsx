@@ -132,26 +132,45 @@ function computeNoAction(b, mo) {
 }
 
 function buildPlans(b, mo, mc, cur) {
+  // 1) Lump-sum settlement: discount grows with overdue months (5% baseline, +1.5%/month, max 42%)
   var discount = Math.min(0.42, 0.05 + mo * 0.015);
+  var lumpTotal = Math.round(b * (1 - discount));
+  var lumpSave  = b - lumpTotal;
 
-  var lumpTotal   = Math.round(b * (1 - discount));
-  var lumpSave    = b - lumpTotal;
-  var lumpSavePct = Math.round((lumpSave / b) * 100);
+  // 2) Structured ("Most popular") plan — must fit user's stated monthly capacity
+  //    Pick months so that monthly (including fee) <= mc. Iterate fee tier on duration.
+  function feeForMonths(m) { return m <= 12 ? 0 : m <= 24 ? 0.04 : 0.07; }
+  var popM, popFee, popTotal, popMonthly;
+  if (mc > 0) {
+    popM = Math.max(6, Math.ceil(b / mc));
+    popFee = feeForMonths(popM);
+    popTotal = Math.round(b * (1 + popFee));
+    // bump months until monthly <= capacity (handles the fee inflating the total)
+    while (Math.ceil(popTotal / popM) > mc && popM < 120) {
+      popM += 1;
+      popFee = feeForMonths(popM);
+      popTotal = Math.round(b * (1 + popFee));
+    }
+    popMonthly = Math.ceil(popTotal / popM);
+  } else {
+    popM = 24;
+    popFee = feeForMonths(popM);
+    popTotal = Math.round(b * (1 + popFee));
+    popMonthly = Math.ceil(popTotal / popM);
+  }
 
-  var rawM      = mc > 0 ? Math.ceil(b / mc) : 24;
-  var popM      = Math.max(6, rawM);
-  var popFee    = popM <= 12 ? 0 : popM <= 24 ? 0.04 : 0.07;
-  var popTotal  = Math.round(b * (1 + popFee));
-  var popMonthly = Math.ceil(popTotal / popM);
-
-  var longM       = Math.round(popM * 1.4);
-  var longFee     = 0.10;
-  var longTotal   = Math.round(b * (1 + longFee));
+  // 3) Extended plan — ~40% longer duration, lower monthly than the structured plan
+  var longM = Math.max(popM + 6, Math.round(popM * 1.4));
+  var longFee = 0.10;
+  var longTotal = Math.round(b * (1 + longFee));
   var longMonthly = Math.ceil(longTotal / longM);
 
-  // no-action must always be the worst-case — ensure it exceeds the most expensive plan
+  // 4) No-action cost: must be the worst case so framing holds (≥ most expensive plan)
   var maxPlanTotal = Math.max(lumpTotal, popTotal, longTotal);
   var noAction = Math.max(computeNoAction(b, mo), Math.round(maxPlanTotal * 1.18) + 500);
+
+  // Unified "% saved vs no-action" across all three plans
+  var lumpSavePct = Math.round(((noAction - lumpTotal) / noAction) * 100);
 
   var lumpCalcRows = [
     { label:"Outstanding balance",                              value:fmt(b, cur),           note:"" },
@@ -186,9 +205,10 @@ function buildPlans(b, mo, mc, cur) {
     { id:"long", isLump:false, months:longM, monthly:longMonthly,total:longTotal,  saveVsNA:longSaveVsNA,        savePct:longSavePct, calcRows:longCalcRows },
   ];
 
+  // Recommend lump if the user can clear it within ~1.5 months of stated capacity.
+  // Otherwise default to the structured plan.
   var recommendedId = "pop";
   if (mc > 0 && lumpTotal <= mc * 1.5) recommendedId = "lump";
-  else if (mc > 0 && popMonthly >= lumpTotal * 0.8) recommendedId = "lump";
 
   var showAdvisorCard = longM > 60;
   return { plans:plans, recommendedId:recommendedId, showAdvisorCard:showAdvisorCard, noAction:noAction };
