@@ -250,7 +250,7 @@ function CalcPopup({ plan, planTitle, cur, onClose }) {
 function Page1({ onSubmit, saved }) {
   var [pmMode, setPmMode]       = useState(false);
   var [openNote, setOpenNote]   = useState(null);
-  var [step, setStep]           = useState("A");
+  var [step, setStep]           = useState(saved && saved.phone ? "C" : "A");
   var [otp, setOtp]             = useState(["0","0","0","0"]);
   var [stepVis, setStepVis]     = useState(true);
   var [currency, setCurrency]   = useState((saved && saved.currency) || "AED");
