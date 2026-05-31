@@ -142,7 +142,7 @@ function buildPlans(b, mo, mc, cur) {
   function feeForMonths(m) { return m <= 12 ? 0 : m <= 24 ? 0.04 : 0.07; }
   var popM, popFee, popTotal, popMonthly;
   if (mc > 0) {
-    popM = Math.max(6, Math.ceil(b / mc));
+    popM = Math.max(3, Math.ceil(b / mc));
     popFee = feeForMonths(popM);
     popTotal = Math.round(b * (1 + popFee));
     // bump months until monthly <= capacity (handles the fee inflating the total)
@@ -679,12 +679,12 @@ function Page2({ data, onBack, onConfirm }) {
                       onChange={function(e) { setCapDraft(e.target.value); }}
                       onBlur={commitCap}
                       onKeyDown={function(e) { if (e.key === "Enter") commitCap(); }}
-                      style={{ fontSize:22, fontWeight:700, color:"#111", border:"none", borderBottom:"2px solid #2a2a2a", outline:"none", background:"transparent", fontFamily:"system-ui,sans-serif", padding:"2px 0", width:"100%", maxWidth:160, minWidth:80, letterSpacing:"-0.01em" }}
+                      style={{ fontSize:17, fontWeight:600, color:"#333", border:"none", borderBottom:"2px solid #2a2a2a", outline:"none", background:"transparent", fontFamily:"system-ui,sans-serif", padding:"2px 0", width:"100%", maxWidth:140, minWidth:80, letterSpacing:"-0.005em" }}
                     />
                   </div>
                 ) : (
-                  <div style={{ fontSize:22, fontWeight:700, color:"#111", fontFamily:"system-ui,sans-serif", letterSpacing:"-0.01em" }}>
-                    {fmt(capacity, cur)}<span style={{ fontSize:13, color:"#aaa", fontWeight:400, marginLeft:4 }}>/mo</span>
+                  <div style={{ fontSize:17, fontWeight:600, color:"#333", fontFamily:"system-ui,sans-serif", letterSpacing:"-0.005em" }}>
+                    {fmt(capacity, cur)}<span style={{ fontSize:12, color:"#aaa", fontWeight:400, marginLeft:3 }}>/mo</span>
                   </div>
                 )}
               </div>
@@ -696,6 +696,15 @@ function Page2({ data, onBack, onConfirm }) {
               </button>
             </div>
           </div>
+
+          {plans[1].months > 36 && (
+            <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginTop:10, padding:"9px 13px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8 }}>
+              <span style={{ fontSize:12, color:"#92400e", marginTop:1, flexShrink:0 }}>⚠</span>
+              <span style={{ fontSize:12, color:"#92400e", fontFamily:"system-ui,sans-serif", lineHeight:1.55 }}>
+                At {fmt(capacity, cur)}/mo your plan stretches to {plans[1].months} months. Increasing capacity even slightly can shorten this significantly.
+              </span>
+            </div>
+          )}
 
           {/* No action */}
           <div style={{ marginTop:12 }}>
