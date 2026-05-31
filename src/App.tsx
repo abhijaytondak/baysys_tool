@@ -199,18 +199,26 @@ function buildPlans(b, mo, mc, cur) {
     { label:"vs. no-action cost (" + fmt(noAction, cur) + ")",  value: longSaveVsNA > 0 ? "Save " + fmt(longSaveVsNA, cur) : "Similar to no-action", note:"Structured vs. legal route", green: longSaveVsNA > 0 },
   ];
 
-  var plans = [
+  // When the user can comfortably clear the balance in one shot (capacity >= balance),
+  // the extended plan is pointless and the long plan is actively misleading. Drop it.
+  var canPayInOne = mc > 0 && mc >= b;
+
+  var plans = canPayInOne ? [
+    { id:"lump", isLump:true,  months:0,     monthly:0,          total:lumpTotal,  saveVsNA:noAction-lumpTotal,  savePct:lumpSavePct, calcRows:lumpCalcRows },
+    { id:"pop",  isLump:false, months:popM,  monthly:popMonthly, total:popTotal,   saveVsNA:popSaveVsNA,         savePct:popSavePct,  calcRows:popCalcRows  },
+  ] : [
     { id:"lump", isLump:true,  months:0,     monthly:0,          total:lumpTotal,  saveVsNA:noAction-lumpTotal,  savePct:lumpSavePct, calcRows:lumpCalcRows },
     { id:"pop",  isLump:false, months:popM,  monthly:popMonthly, total:popTotal,   saveVsNA:popSaveVsNA,         savePct:popSavePct,  calcRows:popCalcRows  },
     { id:"long", isLump:false, months:longM, monthly:longMonthly,total:longTotal,  saveVsNA:longSaveVsNA,        savePct:longSavePct, calcRows:longCalcRows },
   ];
 
   // Recommend lump if the user can clear it within ~1.5 months of stated capacity.
-  // Otherwise default to the structured plan.
+  // When mc >= b, lump is always the right call.
   var recommendedId = "pop";
   if (mc > 0 && lumpTotal <= mc * 1.5) recommendedId = "lump";
+  if (canPayInOne) recommendedId = "lump";
 
-  var showAdvisorCard = longM > 60;
+  var showAdvisorCard = !canPayInOne && longM > 60;
   return { plans:plans, recommendedId:recommendedId, showAdvisorCard:showAdvisorCard, noAction:noAction };
 }
 
