@@ -230,6 +230,9 @@ function CalcPopup({ plan, planTitle, cur, onClose }) {
 function Page1({ onSubmit, saved }) {
   var [pmMode, setPmMode]       = useState(false);
   var [openNote, setOpenNote]   = useState(null);
+  var [step, setStep]           = useState("A");
+  var [otp, setOtp]             = useState(["0","0","0","0"]);
+  var [stepVis, setStepVis]     = useState(true);
   var [currency, setCurrency]   = useState((saved && saved.currency) || "AED");
   var [phone, setPhone]         = useState((saved && saved.phone) || "");
   var [name, setName]           = useState((saved && saved.name) || "");
@@ -241,6 +244,36 @@ function Page1({ onSubmit, saved }) {
   var [submitted, setSubmitted] = useState(false);
   var [proofIdx, setProofIdx]   = useState(0);
   var [proofVis, setProofVis]   = useState(true);
+
+  function goToStep(next) {
+    setStepVis(false);
+    setTimeout(function() { setStep(next); setStepVis(true); }, 180);
+  }
+
+  function maskedPhone() {
+    if (!phone) return "";
+    return "•••• ••" + phone.slice(-2);
+  }
+
+  function handleOtpChange(idx, val) {
+    var d = val.replace(/[^0-9]/g, "").slice(-1);
+    var next = otp.slice();
+    next[idx] = d || "";
+    setOtp(next);
+    if (d && idx < 3) {
+      var el = document.getElementById("otp-" + (idx+1));
+      if (el) el.focus();
+    }
+    if (d && idx === 3 && next.every(function(x) { return x !== ""; })) {
+      setTimeout(function() { goToStep("C"); }, 150);
+    }
+  }
+  function handleOtpKey(idx, e) {
+    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
+      var el = document.getElementById("otp-" + (idx-1));
+      if (el) el.focus();
+    }
+  }
 
   function onPhoneChange(v) {
     var digits = v.replace(/[^0-9]/g, "").slice(0, 12);
@@ -311,12 +344,38 @@ function Page1({ onSubmit, saved }) {
   }
   var p = SOCIAL[proofIdx];
 
+  var cardShadow = "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)";
+  var cardStyle = { background:"#fff", borderRadius:16, padding:"28px 22px 26px", margin:"18px 0 40px", boxShadow:cardShadow };
+  function ctaStyle(active) {
+    return { width:"100%", padding:"14px", fontSize:15, fontWeight:500, fontFamily:"system-ui,sans-serif", borderRadius:10, border:"none", background: active ? "#2a2a2a" : "#c8c3bc", color:"#fff", cursor: active ? "pointer" : "default", transition:"background 0.2s" };
+  }
+
+  var phoneOk = phone.length >= 9;
+  var otpOk = otp.every(function(x) { return x !== ""; });
+  var stepOrder = { A:0, B:1, C:2 };
+  function dot(s) {
+    var active = s === step;
+    var done = stepOrder[s] < stepOrder[step];
+    return (
+      <div key={s} style={{
+        width: active ? 24 : 8, height:8, borderRadius:999,
+        background: active || done ? "#2a2a2a" : "#e8e2db",
+        transition:"all 0.25s ease"
+      }} />
+    );
+  }
+
   return (
     <div style={{ background:"#eae4dc", minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", fontFamily:"Georgia,serif" }}>
-      <style>{"input::placeholder{color:#bbb} input:focus,select:focus{border-color:#aaa!important;background:#fff!important;outline:none}"}</style>
+      <style>{"input::placeholder{color:#bbb} input:focus,select:focus{border-color:#aaa!important;background:#fff!important;outline:none} .otp-box:focus{border-color:#2a2a2a!important;box-shadow:0 0 0 4px rgba(42,42,42,0.08);background:#fff!important}"}</style>
       <div style={{ width:"100%", maxWidth:500, padding:"0 16px", boxSizing:"border-box" }}>
         <Header pmMode={pmMode} setPmMode={setPmMode} />
-        <div style={{ marginTop:20 }}>
+
+        <div style={{ display:"flex", gap:6, justifyContent:"center", marginTop:16 }}>
+          {["A","B","C"].map(dot)}
+        </div>
+
+        <div style={{ marginTop:18 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, background:"#fff", borderRadius:10, padding:"11px 16px", border:"1px solid #e8e2db", opacity: proofVis ? 1 : 0, transition:"opacity 0.35s" }}>
             <span style={{ fontSize:15, flexShrink:0 }}>👤</span>
             <span style={{ fontSize:13, color:"#777", fontFamily:"system-ui,sans-serif", lineHeight:1.5, flex:1, minWidth:0 }}>
@@ -326,23 +385,99 @@ function Page1({ onSubmit, saved }) {
           </div>
           {pmMode && openNote==="social_proof" && <PMNote id="social_proof" onClose={function() { setOpenNote(null); }} />}
         </div>
-        <div style={{ background:"#fff", borderRadius:16, padding:"28px 22px 26px", margin:"18px 0 40px" }}>
+
+        <div style={{ opacity: stepVis ? 1 : 0, transform: stepVis ? "translateY(0)" : "translateY(6px)", transition:"opacity 0.22s ease, transform 0.22s ease" }}>
+
+        {step === "A" && (
+        <div style={cardStyle}>
           <h1 style={{ fontSize:32, fontWeight:700, lineHeight:1.15, color:"#111", margin:"0 0 10px", letterSpacing:"-0.02em" }}>Let's find a<br/>path forward.</h1>
-          <p style={{ fontSize:14, color:"#999", lineHeight:1.7, margin:"0 0 26px", fontFamily:"system-ui,sans-serif" }}>Tell us about your situation — we'll build options designed around your real capacity to pay.</p>
+          <p style={{ fontSize:14, color:"#999", lineHeight:1.7, margin:"0 0 26px", fontFamily:"system-ui,sans-serif" }}>Start with your phone number — we'll check if you already have an account with us.</p>
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
             <label style={lbl}>Phone number</label>
           </div>
-          <input style={inp(se("phone"))} type="tel" inputMode="numeric" placeholder="e.g. 0501234567" value={phone} onChange={function(e) { onPhoneChange(e.target.value); }} onBlur={function() { touch("phone"); }} />
+          <input style={inp(se("phone"))} type="tel" inputMode="numeric" placeholder="e.g. 0501234567" value={phone} onChange={function(e) { onPhoneChange(e.target.value); }} onBlur={function() { touch("phone"); }} autoFocus />
           <FieldMsg err={se("phone")} warn={null} hint={null} />
+
+          <div style={{ marginTop:24 }}>
+            <button
+              onClick={function() { touch("phone"); if (phoneOk) goToStep("B"); }}
+              style={ctaStyle(phoneOk)}
+            >
+              Continue →
+            </button>
+            <p style={{ fontSize:12, color:"#bbb", fontFamily:"system-ui,sans-serif", margin:"12px 0 0", textAlign:"center" }}>This is a confidential simulation. Your data is not stored or shared.</p>
+          </div>
+        </div>
+        )}
+
+        {step === "B" && (
+        <div style={cardStyle}>
+          <h1 style={{ fontSize:26, fontWeight:700, lineHeight:1.2, color:"#111", margin:"0 0 6px", letterSpacing:"-0.02em" }}>Verify your number</h1>
+          <p style={{ fontSize:14, color:"#999", lineHeight:1.6, margin:"0 0 26px", fontFamily:"system-ui,sans-serif" }}>Code sent to <span style={{ color:"#555", fontWeight:500 }}>{maskedPhone()}</span></p>
+
+          <div style={{ display:"flex", gap:10, justifyContent:"center", marginBottom:14 }}>
+            {[0,1,2,3].map(function(i) {
+              return (
+                <input
+                  key={i}
+                  id={"otp-" + i}
+                  className="otp-box"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={otp[i]}
+                  onChange={function(e) { handleOtpChange(i, e.target.value); }}
+                  onKeyDown={function(e) { handleOtpKey(i, e); }}
+                  onFocus={function(e) { e.target.select(); }}
+                  style={{
+                    width:56, height:56, textAlign:"center",
+                    fontSize:28, fontWeight:600,
+                    fontFamily:"ui-monospace,SFMono-Regular,Menlo,monospace",
+                    color:"#111",
+                    border:"2px solid #e0dbd4", borderRadius:12,
+                    background:"#faf9f7", outline:"none",
+                    boxSizing:"border-box", padding:0,
+                    transition:"border-color 0.15s, box-shadow 0.15s, background 0.15s"
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          <p style={{ fontSize:12, color:"#bbb", fontFamily:"system-ui,sans-serif", textAlign:"center", margin:"0 0 22px" }}>Resend in 30s</p>
+
+          <button
+            onClick={function() { if (otpOk) goToStep("C"); }}
+            style={ctaStyle(otpOk)}
+          >
+            Verify →
+          </button>
+
+          <div style={{ textAlign:"center", marginTop:14 }}>
+            <button
+              onClick={function() { goToStep("A"); }}
+              style={{ background:"none", border:"none", fontSize:13, color:"#888", fontFamily:"system-ui,sans-serif", cursor:"pointer", textDecoration:"underline", padding:0 }}
+            >
+              ← Change number
+            </button>
+          </div>
+        </div>
+        )}
+
+        {step === "C" && (
+        <div style={cardStyle}>
+          <h1 style={{ fontSize:32, fontWeight:700, lineHeight:1.15, color:"#111", margin:"0 0 10px", letterSpacing:"-0.02em" }}>Let's find a<br/>path forward.</h1>
+          <p style={{ fontSize:14, color:"#999", lineHeight:1.7, margin:"0 0 22px", fontFamily:"system-ui,sans-serif" }}>Tell us about your situation — we'll build options designed around your real capacity to pay.</p>
+
           {autoFilled && name && (
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:8, padding:"9px 13px", background:"#ecfdf5", border:"1px solid #a7f3d0", borderRadius:8 }}>
-              <span style={{ fontSize:13, color:"#047857", fontFamily:"system-ui,sans-serif", lineHeight:1.5 }}>
-                Welcome back, <strong style={{ color:"#065f46" }}>{name}</strong>. We found your account and pre-filled your details below.
+            <div style={{ display:"flex", alignItems:"flex-start", gap:8, marginBottom:20, padding:"11px 14px", background:"#ecfdf5", border:"1px solid #a7f3d0", borderRadius:10 }}>
+              <span style={{ fontSize:14, color:"#047857", lineHeight:1.1, marginTop:1 }}>✓</span>
+              <span style={{ fontSize:13, color:"#047857", fontFamily:"system-ui,sans-serif", lineHeight:1.55 }}>
+                Welcome back, <strong style={{ color:"#065f46" }}>{name}</strong>. We pre-filled your details — verify or edit below.
               </span>
             </div>
           )}
-          <div style={{ height:18 }} />
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
             <label style={lbl}>Currency</label>
@@ -389,7 +524,7 @@ function Page1({ onSubmit, saved }) {
                 setTouched({ balance:true, months:true, capacity:true });
                 if (allOk) onSubmit({ currency:currency, balance:b, months:mo, capacity:mc, phone:phone, name:name || (lookupAccount(phone) && lookupAccount(phone).name) || "there" });
               }}
-              style={{ width:"100%", padding:"14px", fontSize:15, fontWeight:500, fontFamily:"system-ui,sans-serif", borderRadius:10, border:"none", background: allOk ? "#2a2a2a" : "#c8c3bc", color:"#fff", cursor: allOk ? "pointer" : "default", transition:"background 0.2s" }}
+              style={ctaStyle(allOk)}
             >
               See My Options →
             </button>
@@ -401,6 +536,9 @@ function Page1({ onSubmit, saved }) {
             </div>
             {pmMode && openNote==="trust_signals" && <PMNote id="trust_signals" onClose={function() { setOpenNote(null); }} />}
           </div>
+        </div>
+        )}
+
         </div>
       </div>
     </div>
