@@ -595,10 +595,10 @@ function Page2({ data, onBack, onConfirm }) {
   var [selected, setSelected] = useState(recommendedId);
   useEffect(function() { setSelected(recommendedId); }, [recommendedId]);
 
-  var selectedPlan = plans.find(function(p) { return p.id === selected; }) || plans[1];
+  var selectedPlan = plans.find(function(p) { return p.id === selected; }) || plans[1] || plans[0];
 
-  var popMonths  = plans[1].months;
-  var longMonths = plans[2].months;
+  var popMonths  = plans[1] ? plans[1].months : 0;
+  var longMonths = plans[2] ? plans[2].months : 0;
 
   function getPlanTitle(id) {
     if (id === "lump") return "One-Time Settlement";
@@ -705,7 +705,7 @@ function Page2({ data, onBack, onConfirm }) {
             </div>
           </div>
 
-          {plans[1].months > 36 && (
+          {plans[1] && plans[1].months > 36 && (
             <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginTop:10, padding:"9px 13px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8 }}>
               <span style={{ fontSize:12, color:"#92400e", marginTop:1, flexShrink:0 }}>⚠</span>
               <span style={{ fontSize:12, color:"#92400e", fontFamily:"system-ui,sans-serif", lineHeight:1.55 }}>
